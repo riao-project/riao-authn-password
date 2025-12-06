@@ -1,4 +1,4 @@
-# {{project-name}} - Readme
+# authn-password - Readme
 
 ## Contributing & Development
 
