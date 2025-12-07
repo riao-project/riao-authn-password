@@ -1,7 +1,7 @@
 {
-	"name": "authn-password",
+	"name": "@riao/authn-password",
 	"version": "1.0.0",
-	"description": "authn-password",
+	"description": "Password driver for Riao",
 	"private": "true",
 	"typescript-template": {
 		"base": "1.0.1",
@@ -21,8 +21,14 @@
 		"script": "ts-node scripts",
 		"publish": "npm run script -- publish"
 	},
+	"dependencies": {
+		"@riao/dbal": "^3.8.0",
+		"@riao/iam": "^3.0.0",
+		"@riao/mysql": "^3.4.0"
+	},
 	"devDependencies": {
 		"@istanbuljs/nyc-config-typescript": "^1.0.2",
+		"@riao/cli": "^3.0.1",
 		"@types/jasmine": "^5.1.4",
 		"@types/node": "^18.19.39",
 		"@typescript-eslint/eslint-plugin": "^7.13.1",
@@ -49,5 +55,18 @@
 		"url": "https://github.com/authn-password/authn-password/issues"
 	},
 	"homepage": "https://github.com/authn-password/authn-password#readme",
-	"keywords": []
+	"keywords": [
+		"authn",
+		"authentication",
+		"password",
+		"riao",
+		"bcrypt",
+		"riao-driver",
+		"riao-authn",
+		"riao-authn-driver",
+		"authentication-driver",
+		"authn-driver",
+		"authn-password",
+		"authn-password-driver"
+	]
 }

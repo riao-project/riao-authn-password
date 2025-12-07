@@ -1,29 +1,77 @@
 # Development
 
-Run a dev test with `npm start`.
+## Quick Start
 
-## Running Tests
+Run the example with `npm start` to test the library in action.
 
-To run unit tests, `npm run test`
-
-## Scripts
-
-You can write custom scripts in the `script/` directory. See `script/example.ts` as an example.
-
-Run your script with `npm run script -- example`
-
-## Compiling
+## Building
 
 ### Debug Builds
 
-To compile a debug build, run `npm run build`. The build output will appear in the `./dist` folder.
+To compile a debug build, run:
 
-### Prod Builds
+```bash
+npm run build
+```
 
-To compile a production build, run `npm run lint:prod && npm run build`. The build output will appear in the `./dist` folder.
+The build output will appear in the `./dist` folder.
 
-## More
+### Production Builds
 
-### Generating Docs
+To compile a production build, run:
 
-`npm run doc` and browse docs/index.html!
+```bash
+npm run script publish
+```
+
+The build output will appear in the `./dist/src` folder.
+
+## Testing
+
+Run the full test suite with linting and coverage:
+
+```bash
+npm test
+```
+
+Run tests only (without linting):
+
+```bash
+npm run test:run
+```
+
+Run tests in development mode with file watching:
+
+```bash
+npm run test:dev
+```
+
+## Scripts
+
+You can write custom scripts in the `scripts/` directory. See `scripts/example.ts` as an example.
+
+Run your script with:
+
+```bash
+npm run script -- example
+```
+
+## Available Commands
+
+- `npm run build` - Compile TypeScript
+- `npm start` - Run the example
+- `npm test` - Run full test suite with linting and coverage
+- `npm run lint` - Run ESLint
+- `npm run lint:prod` - Run ESLint with production configuration
+- `npm run format` - Format code with Prettier
+- `npm run doc` - Generate TypeDoc documentation (output: `docs/typedoc`)
+
+## Generating Documentation
+
+To generate API documentation, run:
+
+```bash
+npm run doc
+```
+
+Then browse `docs/typedoc/index.html` in your browser!
