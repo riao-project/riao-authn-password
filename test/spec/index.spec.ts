@@ -1,8 +1,8 @@
 import 'jasmine';
-import * as index from '../../src';
+import { maindb } from '../../../../database/main';
 
-describe('authn-password', () => {
-	it('exports a', () => {
-		expect(index.a).toBeTrue();
-	});
+beforeAll(async () => {
+	maindb['databasePath'] = '../../database';
+
+	await maindb.init();
 });

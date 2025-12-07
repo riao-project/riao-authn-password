@@ -1,1 +1,1 @@
-export const a = true;
+export { PasswordAuthentication } from './authentication-password';
