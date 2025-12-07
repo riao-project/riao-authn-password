@@ -1,1 +1,5 @@
-export { PasswordAuthentication } from './authentication-password';
+export {
+	PasswordAuthentication,
+	PasswordAuthenticationOptions,
+} from './authentication-password';
+export * from './password';
