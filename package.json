@@ -1,7 +1,7 @@
 {
-	"name": "authn-password",
+	"name": "@riao/authn-password",
 	"version": "1.0.0",
-	"description": "authn-password",
+	"description": "Password driver for Riao",
 	"private": "true",
 	"typescript-template": {
 		"base": "1.0.1",
@@ -55,5 +55,18 @@
 		"url": "https://github.com/authn-password/authn-password/issues"
 	},
 	"homepage": "https://github.com/authn-password/authn-password#readme",
-	"keywords": []
+	"keywords": [
+		"authn",
+		"authentication",
+		"password",
+		"riao",
+		"bcrypt",
+		"riao-driver",
+		"riao-authn",
+		"riao-authn-driver",
+		"authentication-driver",
+		"authn-driver",
+		"authn-password",
+		"authn-password-driver"
+	]
 }
