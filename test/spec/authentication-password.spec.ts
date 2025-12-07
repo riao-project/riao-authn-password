@@ -6,6 +6,7 @@ import { Principal } from '@riao/iam/auth';
 import { compare } from 'bcrypt';
 // eslint-disable-next-line max-len
 import { AuthenticationPasswordMigrations } from '../../src/authentication-password-migrations';
+import { AuthMigrations } from '@riao/iam/auth/auth-migrations';
 
 interface PasswordPrincipal extends Principal {
 	password: string;
@@ -23,6 +24,9 @@ describe('Authentication - Password', () => {
 
 	beforeAll(async () => {
 		await db.init();
+		// Run parent migrations first
+		await runMigrations(db, new AuthMigrations());
+		// Run driver-specific migrations
 		await runMigrations(db, new AuthenticationPasswordMigrations());
 		await runMigrationsDown(db, new AuthenticationPasswordMigrations());
 		await runMigrations(db, new AuthenticationPasswordMigrations());
