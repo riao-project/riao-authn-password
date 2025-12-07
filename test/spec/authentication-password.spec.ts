@@ -1,11 +1,7 @@
 import 'jasmine';
 // eslint-disable-next-line max-len
 import { PasswordAuthentication } from '../../src/authentication-password';
-import {
-	createDatabase,
-	runMigrations,
-	runMigrationsDown,
-} from '../../../../test/database';
+import { createDatabase, runMigrations, runMigrationsDown } from '../database';
 import { Principal } from '@riao/iam/auth';
 import { compare } from 'bcrypt';
 // eslint-disable-next-line max-len
