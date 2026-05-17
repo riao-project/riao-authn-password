@@ -34,15 +34,25 @@ export abstract class PasswordAuthentication<
 		delete (principal as { password?: string }).password;
 
 		const principalId = await super.createPrincipal(principal);
-
-		await this.passwordsRepo.insertOne({
-			record: {
-				principal_id: principalId as string,
-				password_hash: hash,
-			},
-		});
+		await this.insertPassword(principalId, hash);
 
 		return principalId;
+	}
+
+	public async changePassword(
+		principalId: DatabaseRecordId,
+		newPassword: string
+	): Promise<void> {
+		// eslint-disable-next-line no-console
+		console.log(
+			'Changing password for principal ID:',
+			principalId,
+			newPassword
+		);
+		const hash = await this.hash.make(newPassword);
+
+		await this.revokePasswords(principalId);
+		await this.insertPassword(principalId, hash);
 	}
 
 	public async authenticate(
@@ -73,5 +83,29 @@ export abstract class PasswordAuthentication<
 		);
 
 		return isValid ? principal : null;
+	}
+
+	protected async revokePasswords(
+		principalId: DatabaseRecordId
+	): Promise<void> {
+		await this.passwordsRepo.update({
+			set: { deactivate_timestamp: new Date() },
+			where: {
+				principal_id: principalId as string,
+				deactivate_timestamp: null,
+			},
+		});
+	}
+
+	protected async insertPassword(
+		principalId: DatabaseRecordId,
+		hash: string
+	): Promise<void> {
+		await this.passwordsRepo.insertOne({
+			record: {
+				principal_id: principalId as string,
+				password_hash: hash,
+			},
+		});
 	}
 }

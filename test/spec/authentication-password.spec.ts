@@ -189,4 +189,32 @@ describe('Authentication - Password', () => {
 
 		expect(authenticated).toBeNull();
 	});
+
+	it('should change password and invalidate old password', async () => {
+		const principalId = await auth.createPrincipal({
+			login: 'change_password_test',
+			type: 'user',
+			name: 'Change Password Test',
+			password: 'oldpassword',
+		});
+
+		await auth.changePassword(principalId, 'newpassword');
+
+		// Should not authenticate with old password
+		const oldAuth = await auth.authenticate({
+			login: 'change_password_test',
+			password: 'oldpassword',
+		});
+
+		expect(oldAuth).toBeNull();
+
+		// Should authenticate with new password
+		const newAuth = await auth.authenticate({
+			login: 'change_password_test',
+			password: 'newpassword',
+		});
+
+		expect(newAuth).not.toBeNull();
+		expect(newAuth?.login).toEqual('change_password_test');
+	});
 });

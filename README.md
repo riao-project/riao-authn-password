@@ -67,10 +67,13 @@ const userId = await authService.createPrincipal({
   password: 'securePassword123',
 });
 
+// Change a password
+await authService.changePassword(userId, 'newPassword123');
+
 // Authenticate a user
 const user = await authService.authenticate({
   login: 'john.doe',
-  password: 'securePassword123',
+  password: 'newPassword123',
 });
 
 if (user) {
