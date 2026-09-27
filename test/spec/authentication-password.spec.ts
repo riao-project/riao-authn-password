@@ -133,7 +133,8 @@ describe('Authentication - Password', () => {
 	);
 
 	it('should clear lockout state after the cooldown expires', async () => {
-		const authWithShortLockout = new (class extends PasswordAuthentication<PasswordPrincipal> {})({
+		const authWithShortLockout = new (class extends
+			PasswordAuthentication<PasswordPrincipal> {})({
 			db,
 			maxFailedAttempts: 2,
 			lockoutDurationMs: 10,
@@ -155,9 +156,10 @@ describe('Authentication - Password', () => {
 			password: 'wrongpassword',
 		});
 
-		const passwordRecord = await authWithShortLockout.passwordsRepo.findOne({
-			where: { principal_id: principalId as string },
-		});
+		const passwordRecord =
+			await authWithShortLockout.passwordsRepo.findOne({
+				where: { principal_id: principalId as string },
+			});
 		if (!passwordRecord) {
 			throw new Error('Password record not found');
 		}
@@ -178,9 +180,10 @@ describe('Authentication - Password', () => {
 		expect(authenticated).not.toBeNull();
 		expect(authenticated?.login).toEqual('expired_lockout_test');
 
-		const refreshedPasswordRecord = await authWithShortLockout.passwordsRepo.findOne({
-			where: { principal_id: principalId as string },
-		});
+		const refreshedPasswordRecord =
+			await authWithShortLockout.passwordsRepo.findOne({
+				where: { principal_id: principalId as string },
+			});
 		expect(refreshedPasswordRecord?.failed_authentication_count).toEqual(0);
 		expect(refreshedPasswordRecord?.locked_until).toBeNull();
 	});
