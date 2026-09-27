@@ -1,6 +1,10 @@
 import { PasswordAuthentication } from '../src';
-import { exampledb } from '../database/example';
+import { Database } from '@riao/dbal';
+import { createDatabase, db, runMigrations } from '../test/database';
+import { AuthMigrations } from '@riao/iam/auth/auth-migrations';
+import { AuthenticationPasswordMigrations } from '../src/authentication-password-migrations';
 import { Principal } from '@riao/iam/auth';
+import { maindb } from '../database/main';
 
 /* eslint-disable no-console */
 
@@ -17,12 +21,23 @@ interface User extends Principal {
 class UserPasswordAuthentication extends PasswordAuthentication<User> {}
 
 async function main(): Promise<void> {
+	let exampledb: Database;
+	// Initialize the database connection
+	console.log('Initializing example database...');
+	await maindb.init();
+	exampledb = await createDatabase('exampledb');
+	await exampledb.init();
+	console.log('✓ Database initialized');
+
+	// Run migrations
+
+	// Run migrations to create schema
+	console.log('Running migrations...');
+	await runMigrations(exampledb, new AuthMigrations());
+	await runMigrations(exampledb, new AuthenticationPasswordMigrations());
+	console.log('✓ Schema ready\n');
+
 	try {
-		// Initialize the database connection
-
-		console.log('Initializing example database...');
-		await exampledb.init();
-
 		// Create an instance of the password authentication
 		const authService = new UserPasswordAuthentication({
 			db: exampledb,
@@ -31,8 +46,9 @@ async function main(): Promise<void> {
 		// Example 1: Create a new user with a password
 
 		console.log('\n--- Creating a new user ---');
+		const login = 'john.doe' + Date.now();
 		const userId = await authService.createPrincipal({
-			login: 'john.doe' + Date.now(),
+			login,
 			type: 'user',
 			name: 'John Doe',
 			password: 'securePassword123',
@@ -44,7 +60,7 @@ async function main(): Promise<void> {
 
 		console.log('\n--- Authenticating with correct credentials ---');
 		const authenticatedUser = await authService.authenticate({
-			login: 'john.doe',
+			login,
 			password: 'securePassword123',
 		});
 
@@ -63,7 +79,7 @@ async function main(): Promise<void> {
 
 		console.log('\n--- Attempting authentication with wrong password ---');
 		const failedAuth = await authService.authenticate({
-			login: 'john.doe',
+			login,
 			password: 'wrongPassword',
 		});
 
@@ -81,8 +97,10 @@ async function main(): Promise<void> {
 		process.exit(1);
 	}
 	finally {
-		// Close the database connection
-		await exampledb.disconnect();
+		if (exampledb) {
+			// Close the database connection
+			await exampledb.disconnect();
+		}
 	}
 }
 
