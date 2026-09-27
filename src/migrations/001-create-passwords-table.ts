@@ -27,6 +27,17 @@ export class CreatePasswordsTable extends Migration {
 					type: ColumnType.TIMESTAMP,
 					required: false,
 				},
+				{
+					name: 'failed_authentication_count',
+					type: ColumnType.INT,
+					required: true,
+					default: 0,
+				},
+				{
+					name: 'locked_until',
+					type: ColumnType.TIMESTAMP,
+					required: false,
+				},
 			],
 		});
 	}

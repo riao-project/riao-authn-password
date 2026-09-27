@@ -101,6 +101,93 @@ describe('Authentication - Password', () => {
 		expect(authenticated).toBeNull();
 	});
 
+	it(
+		'should temporarily lock after repeated incorrect passwords',
+		async () => {
+			const principalId = await auth.createPrincipal({
+				login: 'lockout_test',
+				type: 'user',
+				name: 'Lockout Test',
+				password: 'password123',
+			});
+
+			for (let attempt = 0; attempt < 5; attempt += 1) {
+				const authenticated = await auth.authenticate({
+					login: 'lockout_test',
+					password: 'wrongpassword',
+				});
+				expect(authenticated).toBeNull();
+			}
+
+			const lockedAuthentication = await auth.authenticate({
+				login: 'lockout_test',
+				password: 'password123',
+			});
+			expect(lockedAuthentication).toBeNull();
+
+			const passwordRecord = await auth.passwordsRepo.findOne({
+				where: { principal_id: principalId as string },
+			});
+			expect(passwordRecord?.locked_until).not.toBeNull();
+		}
+	);
+
+	it('should clear lockout state after the cooldown expires', async () => {
+		const authWithShortLockout = new (class extends
+			PasswordAuthentication<PasswordPrincipal> {})({
+			db,
+			maxFailedAttempts: 2,
+			lockoutDurationMs: 10,
+		});
+
+		const principalId = await authWithShortLockout.createPrincipal({
+			login: 'expired_lockout_test',
+			type: 'user',
+			name: 'Expired Lockout Test',
+			password: 'password123',
+		});
+
+		await authWithShortLockout.authenticate({
+			login: 'expired_lockout_test',
+			password: 'wrongpassword',
+		});
+		await authWithShortLockout.authenticate({
+			login: 'expired_lockout_test',
+			password: 'wrongpassword',
+		});
+
+		const passwordRecord =
+			await authWithShortLockout.passwordsRepo.findOne({
+				where: { principal_id: principalId as string },
+			});
+		if (!passwordRecord) {
+			throw new Error('Password record not found');
+		}
+
+		await authWithShortLockout.passwordsRepo.update({
+			set: {
+				failed_authentication_count: 2,
+				locked_until: new Date(Date.now() - 20),
+			},
+			where: { id: passwordRecord.id },
+		});
+
+		const authenticated = await authWithShortLockout.authenticate({
+			login: 'expired_lockout_test',
+			password: 'password123',
+		});
+
+		expect(authenticated).not.toBeNull();
+		expect(authenticated?.login).toEqual('expired_lockout_test');
+
+		const refreshedPasswordRecord =
+			await authWithShortLockout.passwordsRepo.findOne({
+				where: { principal_id: principalId as string },
+			});
+		expect(refreshedPasswordRecord?.failed_authentication_count).toEqual(0);
+		expect(refreshedPasswordRecord?.locked_until).toBeNull();
+	});
+
 	it('should fail authentication when principal does not exist', async () => {
 		const authenticated = await auth.authenticate({
 			login: 'nonexistent_user',

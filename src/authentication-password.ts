@@ -1,12 +1,17 @@
 import { DatabaseRecordId, QueryRepository } from '@riao/dbal';
-import { Hash } from '@riao/iam/hash';
+import { Hash } from '@riao/crypto';
 import { Principal } from '@riao/iam/auth';
-import { Authentication } from '@riao/iam/authentication';
-import { AuthOptions } from '@riao/iam/auth/auth';
+import {
+	Authentication,
+	AuthenticationOptions,
+	AuthenticationAttempt,
+} from '@riao/iam/authentication';
 import { Password } from './password';
 
-export interface PasswordAuthenticationOptions extends AuthOptions {
+export interface PasswordAuthenticationOptions extends AuthenticationOptions {
 	hash?: Hash;
+	maxFailedAttempts?: number;
+	lockoutDurationMs?: number;
 }
 
 export abstract class PasswordAuthentication<
@@ -15,10 +20,17 @@ export abstract class PasswordAuthentication<
 	public passwordsRepo: QueryRepository<Password>;
 
 	protected hash: Hash;
+	protected readonly maxFailedAttempts: number;
+	protected readonly lockoutDurationMs: number;
 
 	public constructor(options: PasswordAuthenticationOptions) {
 		super(options);
 		this.hash = options.hash ?? new Hash();
+		this.maxFailedAttempts = Math.max(
+			1,
+			options.maxFailedAttempts ?? 5
+		);
+		this.lockoutDurationMs = options.lockoutDurationMs ?? 15 * 60 * 1000;
 		this.passwordsRepo = options.db.getQueryRepository<Password>({
 			table: 'iam_passwords',
 			identifiedBy: 'id',
@@ -43,12 +55,6 @@ export abstract class PasswordAuthentication<
 		principalId: DatabaseRecordId,
 		newPassword: string
 	): Promise<void> {
-		// eslint-disable-next-line no-console
-		console.log(
-			'Changing password for principal ID:',
-			principalId,
-			newPassword
-		);
 		const hash = await this.hash.make(newPassword);
 
 		await this.revokePasswords(principalId);
@@ -58,6 +64,15 @@ export abstract class PasswordAuthentication<
 	public async authenticate(
 		credentials: Partial<TPrincipal & { password: string }>
 	): Promise<TPrincipal | null> {
+		const attempt: AuthenticationAttempt = {
+			scheme: 'password',
+			subject: String(credentials.login ?? ''),
+		};
+		const protection = await this.beforeAuthenticationAttempt(attempt);
+		if (!protection.allowed) {
+			return null;
+		}
+
 		const principal = await this.findActivePrincipal({
 			where: <TPrincipal>{
 				login: credentials.login,
@@ -77,12 +92,87 @@ export abstract class PasswordAuthentication<
 			return null;
 		}
 
+		if (
+			passwordRecord.locked_until &&
+			passwordRecord.locked_until <= new Date()
+		) {
+			await this.passwordsRepo.update({
+				set: {
+					failed_authentication_count: 0,
+					locked_until: null,
+				},
+				where: { id: passwordRecord.id },
+			});
+		}
+		else if (
+			passwordRecord.locked_until &&
+			passwordRecord.locked_until > new Date()
+		) {
+			return null;
+		}
+
 		const isValid = await this.hash.check(
 			credentials.password as string,
 			passwordRecord?.password_hash as string
 		);
 
-		return isValid ? principal : null;
+		if (!isValid) {
+			await this.recordAuthenticationFailure(attempt);
+			await this.recordPasswordFailure(passwordRecord);
+			return null;
+		}
+
+		await this.recordAuthenticationSuccess(attempt);
+		await this.resetPasswordFailures(passwordRecord.id);
+		return principal;
+	}
+
+	protected async recordPasswordFailure(password: Password): Promise<void> {
+		if (
+			password.locked_until &&
+			password.locked_until <= new Date()
+		) {
+			await this.passwordsRepo.update({
+				set: {
+					failed_authentication_count: 0,
+					locked_until: null,
+				},
+				where: { id: password.id },
+			});
+		}
+
+		await this.passwordsRepo.increment({
+			column: 'failed_authentication_count',
+			where: { id: password.id },
+		});
+
+		const updatedPassword = await this.passwordsRepo.findOne({
+			where: { id: password.id },
+		});
+		if (
+			updatedPassword &&
+			(updatedPassword.failed_authentication_count ?? 0) >=
+				this.maxFailedAttempts
+		) {
+			await this.passwordsRepo.update({
+				set: {
+					locked_until: new Date(Date.now() + this.lockoutDurationMs),
+				},
+				where: { id: password.id },
+			});
+		}
+	}
+
+	protected async resetPasswordFailures(
+		passwordId: DatabaseRecordId
+	): Promise<void> {
+		await this.passwordsRepo.update({
+			set: {
+				failed_authentication_count: 0,
+				locked_until: null,
+			},
+			where: { id: passwordId as string },
+		});
 	}
 
 	protected async revokePasswords(
@@ -105,6 +195,8 @@ export abstract class PasswordAuthentication<
 			record: {
 				principal_id: principalId as string,
 				password_hash: hash,
+				failed_authentication_count: 0,
+				locked_until: null,
 			},
 		});
 	}

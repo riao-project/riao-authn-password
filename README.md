@@ -131,7 +131,7 @@ interface Password {
 You can provide a custom hash implementation:
 
 ```typescript
-import { Hash } from '@riao/iam/hash';
+import { Hash } from '@riao/crypto';
 
 class CustomHash extends Hash {
   // Implement your custom hashing logic
