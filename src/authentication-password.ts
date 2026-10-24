@@ -73,6 +73,14 @@ export abstract class PasswordAuthentication<
 			return null;
 		}
 
+		if (
+			typeof credentials.login !== 'string' || !credentials.login ||
+			typeof credentials.password !== 'string' || !credentials.password
+		) {
+			await this.recordAuthenticationFailure(attempt);
+			return null;
+		}
+
 		const principal = await this.findActivePrincipal({
 			where: <TPrincipal>{
 				login: credentials.login,
@@ -80,6 +88,7 @@ export abstract class PasswordAuthentication<
 		});
 
 		if (!principal) {
+			await this.recordAuthenticationFailure(attempt);
 			return null;
 		}
 
@@ -89,6 +98,7 @@ export abstract class PasswordAuthentication<
 		});
 
 		if (!passwordRecord) {
+			await this.recordAuthenticationFailure(attempt);
 			return null;
 		}
 
@@ -112,8 +122,8 @@ export abstract class PasswordAuthentication<
 		}
 
 		const isValid = await this.hash.check(
-			credentials.password as string,
-			passwordRecord?.password_hash as string
+			credentials.password,
+			passwordRecord.password_hash
 		);
 
 		if (!isValid) {
@@ -122,8 +132,8 @@ export abstract class PasswordAuthentication<
 			return null;
 		}
 
-		await this.recordAuthenticationSuccess(attempt);
 		await this.resetPasswordFailures(passwordRecord.id);
+		await this.recordAuthenticationSuccess(attempt);
 		return principal;
 	}
 

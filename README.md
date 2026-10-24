@@ -93,8 +93,10 @@ Abstract class that extends `Authentication<TPrincipal>` and adds password-based
 #### Constructor Options
 
 ```typescript
-interface PasswordAuthenticationOptions extends AuthOptions {
+interface PasswordAuthenticationOptions extends AuthenticationOptions {
   hash?: Hash; // Optional custom hash implementation (defaults to bcrypt)
+  maxFailedAttempts?: number;
+  lockoutDurationMs?: number;
 }
 ```
 
@@ -125,6 +127,24 @@ interface Password {
 ```
 
 ## Configuration
+
+### Version 3 authentication contract
+
+`authenticate()` returns the active principal, or `null` for invalid, missing,
+inactive, or blocked credentials. Database/hash/protection failures reject;
+do not turn every exception into a 401 response.
+
+Configure `authenticationProtection` using IAM's protection contract.
+Allowed attempts record one failure for invalid/missing/inactive credentials
+or one success after persistence completes. Pre-attempt denials and existing
+local lockouts skip verification and both recording hooks. Operational errors
+invoke neither recording hook.
+
+Return the principal from an api-machine inline authentication adapter, or
+establish a principal-bearing application session. An authenticated flag alone
+does not satisfy authorization. `authenticate()` cannot carry lockout delay
+information; applications requiring 429/Retry-After must retain the protection
+decision at their authentication-service boundary.
 
 ### Custom Hash Implementation
 
