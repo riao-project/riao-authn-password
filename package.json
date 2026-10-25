@@ -1,6 +1,6 @@
 {
 	"name": "@riao/authn-password",
-	"version": "2.0.0",
+	"version": "3.0.0",
 	"description": "Password driver for Riao",
 	"private": "true",
 	"typescript-template": {
@@ -22,9 +22,9 @@
 		"publish": "npm run script -- publish"
 	},
 	"dependencies": {
-		"@riao/crypto": "^1.1.1",
+		"@riao/crypto": "^1.2.0",
 		"@riao/dbal": "^3.12.0",
-		"@riao/iam": "^4.0.0",
+		"@riao/iam": "^5.0.1",
 		"bcrypt": "^6.0.0"
 	},
 	"devDependencies": {

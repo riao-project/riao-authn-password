@@ -93,8 +93,10 @@ Abstract class that extends `Authentication<TPrincipal>` and adds password-based
 #### Constructor Options
 
 ```typescript
-interface PasswordAuthenticationOptions extends AuthOptions {
+interface PasswordAuthenticationOptions extends AuthenticationOptions {
   hash?: Hash; // Optional custom hash implementation (defaults to bcrypt)
+  maxFailedAttempts?: number;
+  lockoutDurationMs?: number;
 }
 ```
 
