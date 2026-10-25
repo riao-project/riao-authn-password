@@ -65,6 +65,19 @@ describe('Password authentication contract', () => {
 		expect(protection.onFailure).toHaveBeenCalledTimes(2);
 	});
 
+	it('rejects object logins without coercing the subject', async () => {
+		const credentials = JSON.parse(
+			'{"login":{"toString":null},"password":"secret"}'
+		);
+		expect(await auth.authenticate(credentials)).toBeNull();
+		expect(protection.beforeAttempt).toHaveBeenCalledWith({
+			scheme: 'password',
+			subject: '',
+		});
+		expect(protection.onFailure).toHaveBeenCalledTimes(1);
+		expect(auth.findActivePrincipal).not.toHaveBeenCalled();
+	});
+
 	it('does not count a local lockout as another failure', async () => {
 		(auth.passwordsRepo.findOne as jasmine.Spy).and.resolveTo({
 			id: 'password', locked_until: new Date(Date.now() + 60000),

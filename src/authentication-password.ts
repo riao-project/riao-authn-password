@@ -66,7 +66,9 @@ export abstract class PasswordAuthentication<
 	): Promise<TPrincipal | null> {
 		const attempt: AuthenticationAttempt = {
 			scheme: 'password',
-			subject: String(credentials.login ?? ''),
+			subject: typeof credentials.login === 'string'
+				? credentials.login
+				: '',
 		};
 		const protection = await this.beforeAuthenticationAttempt(attempt);
 		if (!protection.allowed) {
